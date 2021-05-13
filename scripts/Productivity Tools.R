@@ -925,3 +925,338 @@ summary(pressure)
 
 # ADVANCED UNIX. PART 1
 
+# ADVANCED UNIX: ARGUMENTS
+
+# Arguments typically are defined useing a dash (-) or two dashes (--) followed by
+# a letter of a word.
+
+# r: recursive. For example, rm -r <directory-name>: removes all files, subdirectories,
+# files in subdirectories, subdirectories in subdirectories, etc.
+
+# Combine arguments: rm -rf directory-name
+
+# ls -a: Shows all files in the directories including hidden files (e.g., .git file
+# when initializing using git init) (a for all)
+
+# ls -l: Returns more information about the files (i.e., l for long)
+
+# ls -t: Shows files in chronological order.
+
+# ls -r: Reverses the order of how files are shown.
+
+# ls -lart: Shows more information for all files in reverse chronological order.
+
+# ADVANCED UNIX: GETTING HELP AND PIPES
+
+# Getting help: Use man + command name to get help (e.g., man ls). Note that it is NOT
+# available for Git Bash. For Git Bash, you can use command --help (e.g., ls --help).
+
+# Pipes: Pipes the results of a command to the command after the pipe. Similar to the
+# pipe %>% in R. For exapmle, man ls | less (and its equivalent in Git Bash: ls 
+# --help | less). Also useful when listing files with many files (e.g., ls -lart | less).
+
+# ADVANCED UNX: WILD CARDS
+
+# * means any number of any combination of characters. Specifically, to list all html files:
+# ls *.html and to remove all html files in a directory: rm *.html.
+
+# ? means any single character. For example, to erase all files in the form file-001.html
+# with the numbers going from 1 to 999: rm file-???.html.
+
+# Combined wild cards: rm file-001.* to remove all files of the name file-001 regardless
+# of suffix.
+
+# Warning! Combining rm with the * wild card can be dangerous. There are combinations of
+# these commands that will erase your entire file system without asking you for confirmation.
+# Make sure you understand how it works before using this wild card with the rm command.
+
+# 5.2. ADVANCED UNIX - PART 2
+
+# ADVANCED UNIX: ENVIRONMENT VARIABLES AND SHELLS
+
+# In Unix, variables are distinguished from other entities by adding a $ in front. For
+# example, the home directory is stored in $HOME.
+
+# See home directory: echo $HOME
+
+# See them all: env
+
+# See what shell is being used: echo $SHELL (most common shell is bash)
+
+# Change environmental variables: (Don't actually run this command!!!) export PATH =
+# /usr/bin/
+
+# ADVANCED UNIX: EXECUTABLES, PERMISSIONS, AND FILE TYPES
+
+# In Unix, all programs are files. They are called executables. So, ls, mv, and git
+# are all files.
+
+# To find where these program files are, use which. For example, which git would
+# return /usr/bin/git.
+
+# Type ls /usr/bin to see several executable files. There are other directories that
+# hold program files (e.g., Application directory for Mac or Program Files directory
+# for Windows).
+
+# Type echo $PATH to see a list of directories separated by ":".
+
+# Type the full path to run the user-created executables (e.g., ./my-ls).
+
+# Regular file -, directory d, executable x.
+
+# The string also indicates the permission of the file: is it readable? writable?
+# executable? Can other users on the system read the file? Can other users on the
+# system edit the file? Can other users execute if the file is executable?
+
+# ADVANCED UNIX: COMMANDS YOU SHOULD LEARN
+
+# Be aware of common commands and know what they do.
+
+# open/start - On mac open filename tries to figure out the right application of the
+# filename and open it with that application. This is a very useful command. On Git Bash, 
+# you can try start filename. Try opening an R or Rmd file with open or start: it should
+# open with RStudio.
+
+# nano - A bare bones text editor
+
+# ln - create a symbolic link. We do not recommend its use, but you should be familiar
+# with it.
+
+# tar - archive files and subdirectories of a directory into one file.
+
+# ssh - connect to another computer.
+
+# grep - search for patterns in a file.
+
+# awk/sed - These are two very powerful commands that permit you to find specific strings
+# in files and change them.
+
+# COMPREHENSION CHECK PART 1: ADVANCED UNIX
+
+# Question 1
+
+# What will the command ls -lat produce?
+
+# A list of all files (names, sizes, and other information) arranged in chronological
+# order with the most recently modified files at the top of the list. # Correct
+
+# A list of visible files (names, sizes, and other information) arranged in chronological
+# order with the oldest files at the top of the list.
+
+# A list of all files (names only) arranged in chronological order with the oldest files
+# at the top of the list.
+
+# A list of visible files (names only) arranged in chronological order with the most
+# recent files at the top of the list.
+
+# Question 2
+
+# What happens when you remove a directory using the command rm -r?
+
+# You cannot remove a directory using the rm command
+
+# You permanently remove the entire directory, including all files and subdirectories.
+# Correct
+
+# You move the entire directory to a trash folder, but it can be restored later.
+
+# You get a warning message asking if you want to proceed, then you delete the
+# directory.
+
+# Question 3
+
+# By default, the head command in Unix displays the first 10 lines of a specified file.
+# You can change the number of lines using an argument that indicates the numeric value
+# of the desired number of lines.
+
+# Which of the following commands displays only the first 6 lines of a manual for the
+# ls command?
+
+# man ls -6 | head
+
+# head | man ls -6
+
+# head -6 | man ls
+
+# man ls | head -6 # Correct
+
+# Question 4
+
+# You have created a directory containing the following files
+
+# data1.csv, data2.txt, data3.txt, Data8.csv, data13.csv, data18.txt, Data22.txt, Data34.csv
+
+# Which command will list only all of the .txt files that have "data" in their name?
+# Remember that commands are case-sensitive.
+
+# ls data*
+
+# ls data*.txt # Correct
+
+# ls *.txt
+
+# ls data?.txt
+
+# Question 5
+
+# You have created a directory containing the following files.
+
+# data1.csv, data2.txt, data3.txt, Data8.csv, data13.csv, data18.txt, Data22.txt, Data34.csv
+
+# Which command will remove every file that begins with "D"?
+
+# rm D* # Correct
+
+# rm D*.txt
+
+# ls D*
+
+# ls D*.txt
+
+# Question 6
+
+# Imagine you have multiple text files in the following directory:
+# /Users/student/Documents/project
+
+# You enter the following commands in sequence:
+
+# mkdir data
+# mv *.txt data
+# cd data
+
+# What will be printed to the screen if you enter the ls command after executing the three
+# lines of code shown above?
+
+# /Users/student/Documents/project/data
+
+# The file names that were moved from the "project" directory into the "data" directory # Correct
+
+# Nothing. You haven't added anything to the new "data" directory yet.
+
+# The file names that remain in the "project" directory
+
+# Question 7
+
+# What does the command echo $HOME do?
+
+# Moves into the home directory
+
+# Makes the current directory the home directory
+
+# Prints the path to the home directory # Correct
+
+# Prints "$HOME" to the screen.
+
+# Question 8
+
+# Many systems operate using the Unix shell and command language, bash. Each time you start
+# using bash, it executes the commands contained in a "dot" file. Your "dot" file may be
+# called something like ".bash_profile" or ".bash_rc".
+
+# Which command will let you see your "dot" files?
+
+# ls -a # Correct
+
+# ls bash*
+
+# head *bash*
+
+# ls -l
+
+# Question 9
+
+# Your colleague was editing his "dot" files when something went wrong. He first noticed
+# there was an issue when he tried to execute the following line of code: ls
+
+# He received the following error: -bash: ls: command not found
+
+# What could have happenede to cause this error?
+
+# He is trying to execute ls which is a bash command, but his system isn't running bash
+# as a shell.
+
+# The command ls doesn't exist. He should be using the command ll.
+
+# He forgot to specify a file name to be listed. The command ls * should work.
+
+# He changed the information contained in $PATH. Now the system cannot find the executable
+# file for ls. # Correct
+
+# Question 10
+
+# The bash profile in your home directory contains information that the bash shell runs each
+# time you use it. You can customize the information in your bash profile to tell your
+# system to do different things. For example, you can make an "alias", which acts like a 
+# keyboard shortcut.
+
+# Which line of code, when added to your bash profile, will let you print "seetop" to view
+# the name, size, and file type of the 10 most recently added visible files?
+
+# alias seetop='ls - lt'
+
+# alias seetop='ls - lt | head'
+
+# alias seetop='ls - t \ head'
+
+# alias seetop='head | ls -l'
+
+# COMPREHENSION CHECK PART 2
+
+# Question 11
+
+# The commands in the pipeline $ cat result.txt | grep "Harvard edX" | tee file2.txt | wc -l
+# perform which of the following actions?
+
+# From result.txt, select lines containing "Harvard edX", store them into file2.txt, and print
+# all unique lines from result.txt.
+
+# From result.txt, select lines containing "Harvard edX", and store them into file2.txt.
+
+# From result.txt, select lines containing "Harvard edX", store them into file2.txt, and print
+# the total number of lines which were written to file2.txt. # Correct
+
+# From result.txt, select lines containing "Harvard edX", store them into file2.txt, and print
+# the number of times "Harvard edX" appears.
+
+# Question 12
+
+# How is git rebase used?
+
+# To switch branches or restore working tree files
+
+# Uses a binary search to find the commit that introduced a bug
+
+# To reapply commits on top of another base tip # Correct
+
+# To reset the current HEAD to the specified state
+
+# To download objects and refs from another repository
+
+# Question 13
+
+# Which of the following statements is wrong about Advanced Unix Executables, Permissions,
+# and File Types?
+
+# In Unix, all programs are files/executables except for commands like ls, mv, and git. 
+# Incorrect
+
+# which git allows a user to find the path to git
+
+# When users create executable files themselves, they cannot be run just by typing the
+# command - the full path must be typed instead
+
+# ls -l can be used to inspect the permissions of each file
+
+# Question 14
+
+# Which of the following commands correctly copies all files which are named as file-???.r
+# (e.g., file-abc.r, file-qwe.r, file-123.r) into the directory named your_directory?
+
+# cp file-???.r ./your_directory # Correct
+
+# cp file-*.r ./your_directory
+
+# cp file-[a-z].r ./your_directory
+
+# cp file-???.* ./your_directory
+
