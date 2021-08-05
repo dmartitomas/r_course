@@ -3256,3 +3256,314 @@ sum(afinn_sentiments$value == 4) # 51
 
 ## COMPREHENSIVE ASSESSMENT: PUERTO RICO HURRICANE MORTALITY
 
+# PROJECT INTRODUCTION
+
+# On September 20, 2017, Hurricane Maria made landfall on Puerto Rico. It was
+# the worst natural disaster on record in Puerto Rico and the deadliest Atlantic
+# hurricane since 2004. However, Puerto Rico's official death statistics only
+# tailed 64 deaths caused directly by the hurricane (due to structural collapse,
+# debris, floods, and drownings), an undercount that slowed disaster recovery
+# funding. The majority of the deaths resulted from infrastructure damage that
+# made it difficult to access resources like clean food, water, power, healthcare
+# and communications in the months after the disaster, and although these deaths
+# were due to effects of the hurricane, they were not initially counted.
+
+# In order to correct the misconception that few lives were lost in Hurricane
+# Maria, statisticians analyzed how death rates in Puerto Rico changed after the
+# hurricane and estimated the excess number of deaths likely caused by the storm.
+# This analysis suggested that the actual number of deaths in Puerto Rico was
+# 2,975 (95% CI: 2,658-3,290) over the 4 months following the hurricane, much
+# higher than the original count.
+
+# We will use your new data wrangling skills to extract actual daily mortality
+# data from Puerto Rico and investigate whether the Hurricane Maria had an
+# immediate effect on daily mortality compared to unnaffected days in September
+# 2015-2017.
+
+# You will need the following libraries and options to complete the assignment:
+library(tidyverse)
+library(pdftools)
+options(digits = 3) # report 3 significant digits
+
+# PUERTO RICO HURRICANE MORTALITY: PART 1
+
+# Question 1
+
+# In the extdata directory of the dslabs package, you will find a pdf file
+# containing daily mortality data for Puerto Rico from Jan 1, 2015 to May 31,
+# 2018. You can find the file like this:
+fn <- system.file("extdata", "RD-Mortality-Report_2015-18-180531.pdf",
+                  package = "dslabs")
+
+# Find and open the file or open it directly from RStudio. On Windows you can type:
+system("cmd.exe", input = paste("start", fn))
+
+# Which of the following best describes this file?
+
+# It is a table. Extracting the data will be easy.
+# It is a report written in prose. Extracting the data will be impossible.
+# It is a report combining graphs and tables. Extracting the data seems possible. [X]
+# It shows graphs of the data. Extracting the data will be difficult.
+
+# Question 2
+
+# We are going to create a tidy dataset with each row representing an observation.
+# The variables in this dataset will be year, month, day, and deaths.
+
+# Use the pdftools package to read in fn using the pdf_text() function. Store the
+# results in an object called txt.
+
+txt <- pdf_text(fn)
+
+# Describe what you see in txt.
+
+# A table with the mortality data.
+
+# A character string of length 12. Each entry represents the text in each page.
+# The mortality data is in there somewhere. [X]
+
+# A character string with one entry containing all the information in the file.
+
+# An html document.
+
+# Question 3
+
+# Extract the ninth page of the pdf file from the object txt, then use the
+# str_split() function from the stringr package so that you have each line in
+# a different entry. The new line character is \n. Call this string vector x.
+library(stringr)
+
+x <- str_split(txt[9], "\\n")
+head(x)
+
+# Look at x. What best describes what you see?
+
+# It is an empty string.
+# I can see the figure shown in page 1.
+# It is a tidy table.
+# I can see the table! But there is a bunch of other stuff we need to get rid off. [X]
+
+# What kind of object is x? # List
+
+# How many entries does x have?
+
+length(x[1]) # 1
+
+# Question 4
+
+# Define s to be the first entry of the x object.
+
+# What kind of object is s?
+
+s <- x[[1]]
+
+# What kind of object is s? # Character vector
+class(s)
+
+# How many entries does s have? 
+length(s) # 41
+
+# Question 5
+
+# When inspecting the string we obtained above, we see a common problem: white
+# space before and after the other characters. Trimming is a common first step
+# in string processing. These extra spaces will eventually make splitting the
+# strings hard so we start by removing them.
+
+# We learned about the command str_trim() that removes spaces at the start or end
+# of the strings. Use this function to trim s and assign the result to s again.
+
+s <- str_trim(s)
+
+# After trimming, what single character is the last character of element 1 of s?
+
+s[1] # s
+
+# Question 6
+
+# We want to extract the numbers from the strings stored in s. However, there are
+# a lot of non-numeric characters that will get in the way. We want to remove these,
+# but before doing this we want to preserve the string with the column header,
+# which includes the month abbreviation.
+
+# Use the str_which() function to find the row with the header. Save this result
+# to header_index. Hint: find the first string that matches the pattern "2015"
+# using the str_which() function.
+
+header_index <- str_which(s, "2015")[1]
+
+# What is the value of header_index?
+header_index # 3
+
+# Question 7
+
+# We want to extract two objects from the header row: month will store the month
+# and header will store the column names.
+
+# Save the content of the header row into an object called header, then use
+# str_split() to help define the two objects we need.
+
+tmp <- str_split(s[header_index], "\\s+", simplify = TRUE)
+month <- tmp[1]
+header <- tmp[-1]
+
+# What is the value of month? 
+# Use header_index to extract the row. The separator here is one or more spaces.
+# Also, consider using the simplify argument.
+
+month # SEP
+
+# What is the third value in header?
+
+header[3] # 2017
+
+# Question 8
+
+# Notice that towards the end of the page defined by s you see a "Total" row
+# followed by rows with other summary statistics. Create an object called
+# tail_index with the index of the "Total" entry.
+
+tail_index <- str_which(s, "Total")
+tail_index # 36
+
+# Question 9
+
+# Because our PDF page includes graphs with numbers, some of our rows have just
+# one number (from the y-axis of the plot). Use the str_count() function to
+# create an object n with the count of numbers in each row.
+
+# How many rows have a single number in them?
+# You can write a regex for a number like this \\d+.
+
+sum(str_count(s, "\\d+") == 1) # 2
+
+# Question 10
+
+# We are now ready to remove entries from rows that we know we don't need. The
+# entry header_index and everything before it should be removed. Entries for
+# which n is 1 should also be remove, and the entry tail_index and everything
+# that comes after it should be removed as well.
+
+s <- s[-(36:41)]
+s <- s[-(1:3)]
+remove <- str_count(s, "\\d+") == 1
+s <- s[!remove]
+
+# How many entries remain in s?
+length(s) # 30
+
+# Also,
+
+out <- c(1:header_index, which(str_count(s, "\\d+") == 1), tail_index:length(s))
+s <- s[-out]
+length(s)
+
+# Question 11
+
+# Now we are ready to remove all text that is not a digit or space. Do this using
+# regex and the str_remove_all() function.
+
+# In regex, using the ^ inside the square brackets [] means not, like the ! means
+# not in !=. To define the regex pattern to catch all non-numbers, you can type
+# [^\\d]. But remember you walso want to keep spaces.
+
+# Which of these commands produces the correct output?
+
+#1
+str_remove_all(s, "[^\\d]")
+
+#2
+str_remove_all(s, "[\\d\\s]")
+
+#3
+str_remove_all(s, "[^\\d\\s]") # [X]
+
+#4
+str_remove_all(s, "[\\d]")
+
+s <- str_remove_all(s, "[^\\d\\s]")
+
+# Question 12
+
+# Use the str_split_fixed() function to convert s into a data matrix with just
+# the day and death count data:
+
+s <- str_split_fixed(s, "\\s+", n = 6)[,1:5]
+
+# Now you are almost ready to finish. Add column names to the matrix: the first
+# column should be day and the next columns should be header. Convert all values
+# to numeric. Also, add a column with the month. Call the resulting object tab.
+
+s <- matrix(as.numeric(s), ncol = ncol(s))
+colnames(s) <- c("day", header)
+
+# What was the mean number of deaths per day in September 2015?
+
+colMeans(s) # 75.3
+
+# What was the mean number of deaths per day in September 2016?
+
+colMeans(s) # 78.9
+
+# Hurricane Maria hit Puerto Rico on September 20, 2017. What was the mean number
+# of deaths per day from September 1-19, 2017, before the Hurrican hit?
+
+colMeans(s[1:19,]) # 83.7
+
+# What was the mean number of deaths per day from September 20-30, 2017, after
+# the hurricane hit?
+
+mean(s[20:30, 4]) # 122
+
+# This is how it is solved, with a data.frame:
+
+tab <- s %>%
+  as_data_frame() %>%
+  setNames(c("day", header)) %>%
+  mutate_all(as.numeric)
+
+mean(tab$"2015") # 75.3
+mean(tab$"2016") # 78.9
+mean(tab$"2017"[1:19]) # 83.7
+mean(tab$"2017"[20:30]) # 122.0
+
+# Question 13
+
+# Finish it up by changing tab to a tidy format, starting from this code outline:
+
+# tab <- tab %>% #####(year, deaths, -day) %>%
+#        mutate(deaths = as.numeric(deaths))
+# tab
+
+# What code fills the blank to generate a data frame with columns named "day",
+# "year", and "deaths?
+
+# separate
+# unite
+# gather [X]
+# spread
+
+tab <- tab %>% gather(year, deaths, -day) %>%
+  mutate(deaths = as.numeric(deaths))
+
+# Question 14
+
+# Make a plot of deaths versus day with color to denote year. Exclude 2018
+# since we have no data. Add a vertical line at day 20, the day that Hurricane
+# Maria hit in 2017.
+
+tab %>% filter(year < 2018) %>%
+  ggplot(aes(day, deaths, color = year)) +
+  geom_line() +
+  geom_vline(xintercept = 20)
+
+# Which of the following are TRUE?
+
+# September 2015 and 2016 deaths by day are roughly equal to each other. [X]
+
+# The day with the most deaths was the day of the hurricane: September 20, 2017
+
+# After the hurricane in September 2017, there were over 100 deaths per day every
+# day for the rest of the month. [X]
+
+# No days before September 20, 2017 have over 100 deaths per day. [X]
