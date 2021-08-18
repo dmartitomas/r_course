@@ -1292,3 +1292,377 @@ fit_bb$coef[2]
 
 # 2.3. TIBBLES, DO, AND BROOM
 
+# ADVANCED DPLYR: TIBBLES
+
+# Tibbles can be regarded as a modern version of data frames and are the default data structure
+# in the tidyverse.
+
+# Some functions that do not work properly with data frames do work with tibbles.
+
+# stratify by HR
+dat <- Teams %>% filter(yearID %in% 1961:2001) %>%
+  mutate(HR = round(HR/G, 1),
+         BB = BB/G,
+         R = R/G) %>%
+  select(HR, BB, R) %>%
+  filter(HR >= 0.4 & HR <= 1.2)
+
+# calculate the slope of regression lines to predict runs by BB in different HR strata
+dat %>%
+  group_by(HR) %>%
+  summarize(slope = cor(BB,R)*sd(R)/sd(BB))
+
+# use lm to get estimated slopes - lm does not work with grouped tibbles
+dat %>%
+  group_by(HR) %>%
+  lm(R ~ BB, data = .) %>%
+  .$coef
+
+# inspect grouped tibble
+dat %>% group_by(HR) %>% head()
+dat %>% group_by(HR) %>% class()
+
+# TIBBLES: DIFFERENCES FROM DATA FRAMES
+
+# Tibbles are more readable than data frames.
+
+# If you subset a data frame, you may not get a data frame. If you subset a tibble, you always
+# get a tibble.
+
+# Tibbles can hold more complex objects such as lists or functions.
+
+# Tibbles can be grouped.
+
+# inspect data frame and tibble
+Teams
+as_tibble(Teams)
+# Note than the function was formerly called as.tibble()
+
+# subsetting a data frame sometimes generates vectors
+class(Teams[,20])
+
+# subsetting a tibble always generates tibbles
+class(as_tibble(Teams[,20]))
+
+# pulling a vector out of tibble
+class(as_tibble(Teams)$HR)
+
+# access a non-existing column in a data frame or a tibble
+Teams$hr
+as_tibble(Teams)$hr
+
+# create a tibble with complex objects
+tibble(id = c(1, 2, 3), func = c(mean, median, sd))
+
+# DO
+
+# The do() function serves as a bridge between R functions, such as lm(), and the tidyverse.
+
+# We have to specify a column when using the do() function, otherwise we will get an error.
+
+# If the data frame being returned has more than one row, the rows will be concatenated appropriately.
+
+# use do to fit a regression line to each HR stratum
+dat %>%
+  group_by(HR) %>%
+  do(fit = lm(R ~ BB, data = .))
+
+# using without a column name gives an error
+dat %>%
+  group_by(HR) %>%
+  do(lm(R ~ BB, data = .))
+
+# define a function to extract the slope from lm
+get_slope <- function(data){
+  fit <- lm(R ~ BB, data = data)
+  data.frame(slope = fit$coefficients[2],
+             se = summary(fit)$coefficient[2,2])
+}
+
+# return the desired data frame
+dat %>%
+  group_by(HR) %>%
+  do(get_slope(.))
+
+# not the desired output: a column containing data frames
+dat %>%
+  group_by(HR) %>%
+  do(slope = get_slope(.))
+
+# data frames with multiple rows will be concatenated appropriately
+get_lse <- function(data){
+  fit <- lm(R ~ BB, data = data)
+  data.frame(term = names(fit$coefficients),
+             estimate = fit$coefficients,
+             se = summary(fit)$coefficients[,2])
+}
+
+dat %>%
+  group_by(HR) %>%
+  do(get_lse(.))
+
+# BROOM
+
+# The broom package has three main functions, all of which extract information from the object returned
+# by lm and return it in a tidyverse friendly data frame.
+
+# The tidy() function returns estimates and related information as a data frame.
+
+# The functions glance() and augment() relate to model specific and observation specific outcomes
+# respectively.
+
+# use tidy to return lm estimates and related information as a data frame
+library(broom)
+fit <- lm(R ~ BB, data = dat)
+tidy(fit)
+
+# add confidence intervals with tidy
+tidy(fit, conf.int = TRUE)
+
+# pipeline with lm, do, tidy
+dat %>%
+  group_by(HR) %>%
+  do(tidy(lm(R ~ BB, data = .), conf.int = TRUE)) %>%
+  filter(term == "BB") %>%
+  select(HR, estimate, conf.low, conf.high)
+
+# make ggplots
+dat %>%
+  group_by(HR) %>%
+  do(tidy(lm(R ~ BB, data = .), conf.int = TRUE)) %>%
+  filter(term == "BB") %>%
+  select(HR, estimate, conf.low, conf.high) %>%
+  ggplot(aes(HR, y = estimate, ymin = conf.low, ymax = conf.high)) +
+  geom_errorbar() +
+  geom_point()
+
+# ASSESSMENT: TIBBLES, DO, AND BROOM, PART 1
+
+# Question 1
+
+# As seen in the videos, what problem do we encounter when we try to run a linear model on our
+# baseball data, grouping by home runs?
+
+# There is not enough data in some levels to run the model.
+# The lm() function does not know how to handle group tibbles. [X]
+# The results of the lm() function cannot be put into a tidy format.
+
+# Question 2
+
+# Tibbles are similar to what other class in R?
+
+# Vectors
+# Matrices
+# Data frames [X]
+# Lists
+
+# Question 3
+
+# What are some advantages of tibbles compared to data frames? Select all that apply.
+
+# Tibbes display better. [X]
+# If you subset a tibble, you always get back a tibble. [X]
+# Tibbles can have complex entries. [X]
+# Tibbles can be grouped. [X]
+
+# Question 4
+
+# What are two advantages of the do() command, when applied to the tidyverse? Select two.
+
+# It is faster than normal functions.
+# It returns useful error messages.
+# It understands grouped tibbles. [X]
+# It always returns a data.frame. [X]
+
+# Question 5
+
+# You want to take the tibble dat, which we used in the video on the do() function, and run a linear
+# model R ~ BB for each strata of HR. Then you want to add three new columns to your grouped tibble:
+# the coefficients, standard error, and p-value for the BB term in the model.
+
+# You've already written the function get_slope(), shown below:
+get_slope <- function(data){
+  fit <- lm(R ~ BB, data = data)
+  sum.fit <- summary(fit)
+  data.frame(slope = sum.fit$coefficients[2, "Estimate"],
+             se = sum.fit$coefficients[2, "Std. Error"],
+             pvalue = sum.fit$coefficients[2, "Pr(>|t|)"])
+}
+
+# What additional code could you write to accomplish your goal?
+
+# 1
+dat %>%
+  group_by(HR) %>%
+  do(get_slope)
+
+# 2
+dat %>%
+  group_by(HR) %>%
+  do(get_slope(.)) # [X]
+
+# 3
+dat %>%
+  group_by(HR) %>%
+  do(slope = get_slope(.))
+
+# 4
+dat %>%
+  do(get_slope(.))
+
+# Question 6
+
+# The output of a broom function is always what?
+
+# A data frame
+# A list
+# A vector
+
+# Question 7
+
+# You want to know whether the relationship between home runs and runs per game varies varies by
+# baseball league. You create the following data set:
+dat <- Teams %>% filter(yearID %in% 1961:2001) %>%
+  mutate(HR = HR / G,
+         R = R / G) %>%
+  select(lgID, HR, BB, R)
+
+# What code would quickly help you answer this question?
+
+# 1
+dat %>%
+  group_by(lgID) %>%
+  do(tidy(lm(R ~ HR, data = .), conf.int = T)) %>%
+  filter(term == "HR") # [X]
+
+# 2
+dat %>%
+  group_by(lgID) %>%
+  do(glance(lm(R ~ HR, data = .)))
+
+# 3
+dat %>%
+  do(tidy(lm(R ~ HR, data = .), conf.int = T)) %>%
+  filter(term == "HR")
+
+# 4
+dat %>%
+  group_by(lgID) %>%
+  do(mod = lm(R ~ HR, data = .))
+
+# ASSESSMENT: TIBBLES, DO, AND BROOM, PART 2
+
+# We have investigated the relationship between fathers' height and sons' heights. But what about other
+# parent-child relationships? Does one parent's height have a stronger association with child height? How
+# does the child gender's affect this relationship in heights? Are any differences that we observe
+# statistically significant?
+
+# The galton dataset is a sample of one male and one female child from each family in the GaltonFamilies
+# dataset. The pair column denotes whether the pair is father and daugther, father and son, mother and
+# daughter, or mother and son.
+
+# Create the galton dataset using the code below:
+library(tidyverse)
+library(HistData)
+data("GaltonFamilies")
+set.seed(1, sample.kind = "Rounding")
+galton <- GaltonFamilies %>%
+  group_by(family, gender) %>%
+  sample_n(1) %>%
+  ungroup() %>%
+  gather(parent, parentHeight, father:mother) %>%
+  mutate(child = ifelse(gender == "female", "daughter", "son")) %>%
+  unite(pair, c("parent", "child"))
+galton
+
+# Question 8
+
+# Group by pair and summarize the number of observations in each group.
+
+galton %>%
+  group_by(pair) %>%
+  summarize(n())
+
+# How many father-daughter pairs are in the dataset? 176
+# How many mother-son pairs are in the dataset? 179
+
+# Question 9
+
+# Calculate the correlation coefficients for fathers and daughters, fathers and sons, mothers and 
+# daughters, and mothers and sons.
+
+galton %>% group_by(pair) %>%
+  summarize(cor(parentHeight, childHeight))
+
+# Which pair has the strongest correlation in heights?
+
+# fathers and daughters
+# fathers and sons [X] .430
+# mothers and daughters
+# mothers and sons
+
+# Which pair has the weakest correlation in heights?
+
+# fathers and daughters
+# fathers and sons
+# mothers and daughters
+# mothers and sons [X] .343
+
+# Question 10 has two parts. The information here applies to both parts.
+
+# Use lm() and the broom package to fit regression lines for each parent-child pair type. Compute the
+# least squares estimates, standard errors, confidence intervals, and p-values for the parentHeight
+# coefficient for each pair.
+
+galton %>%
+  group_by(pair) %>%
+  do(tidy(lm(childHeight ~ parentHeight, data = .), conf.int = TRUE)) %>%
+  filter(term == "parentHeight")
+
+# Question 10a
+
+# What is the estimate of the father-daughter coefficient? 0.345
+
+# For every 1-inch increase in mother's height, how many inches does the typical son's height increase? 0.381
+
+# Question 10b
+
+# Which sets of parent-child heights are significantly correlated at a p-value cut off of .05? Select all
+# that apply.
+
+# father-daughter [X]
+# father-son [X]
+# mother-daughter [X]
+# mother-son [X]
+
+galton %>%
+  group_by(pair) %>%
+  do(tidy(lm(childHeight ~ parentHeight, data = .), conf.int = TRUE)) %>%
+  filter(term == "parentHeight", p.value < 0.5)
+
+# When considering the estimates, which of the following statements are true? Select all that apply.
+
+# All of the confidence intervals overlap with each other. [X]
+
+# At least one confidence interval covers zero.
+
+# The confidence intervals involving mothers' heights are larger than the confidence intervals involving
+# fathers' heights. [X]
+
+# The confidence intervals involving daughters' heights are larger than the confidence intervals involving
+# sons' heights.
+
+# The data are consistent with inheritance of height being independent of the child's gender. [X]
+
+# The data are consistent with inheritance of height being independent of the parent's gender. [X]
+
+galton %>%
+  group_by(pair) %>%
+  do(tidy(lm(childHeight ~ parentHeight, data = .), conf.int = TRUE)) %>%
+  filter(term == "parentHeight") %>%
+  mutate(interval = conf.high - conf.low) %>% select(pair, conf.low, conf.high, interval)
+
+# 2.4. REGRESSION AND BASEBALL
+
+# BUILDING A BETTER OFFENSIVE METRIC FOR BASEBALL
+
